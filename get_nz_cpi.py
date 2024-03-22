@@ -14,7 +14,7 @@ with open("data/header_interest_co_nz_csv.json") as f:
     header_csv = json.load(f)
 
 # %% Get categories.
-summary_url = "https://www.interest.co.nz/charts/interest-rates/fixed-mortgage-rates"
+summary_url = "https://www.interest.co.nz/charts/prices/consumer-prices-index"
 header_categories['Referer'] = summary_url
 header_csv['Referer'] = summary_url
 response = session.get(url=summary_url, headers=header_categories)
@@ -36,21 +36,13 @@ response_json = response.json()[node_id]['csv_data']
 index_df = []
 for category, index_per_cat in zip(categories, response_json):
     index_per_cat_df = pd.DataFrame(index_per_cat)
-    index_per_cat_df = index_per_cat_df.iloc[:, :3]
-    index_per_cat_df.columns = ['Timestamp', f"{category} fixed rate",
-                             f"{category} floating rate"]
+    index_per_cat_df = index_per_cat_df.iloc[:, :2]
+    index_per_cat_df.columns = ['Timestamp', category]
     index_per_cat_df['Timestamp'] = pd.to_datetime(index_per_cat_df['Timestamp'] * 1e6)
     index_per_cat_df['Timestamp'] = index_per_cat_df['Timestamp'].dt.date
     index_per_cat_df.set_index('Timestamp', inplace=True)
     index_df.append(index_per_cat_df)
 index_df = pd.concat(index_df, axis=1)
 
-# %% Fix cells that are at wrong position.
-index_df.loc[pd.to_datetime('2010-02-25').date(), [
-    '4 years % fixed rate', '4 years % floating rate']] = index_df.loc[
-    pd.to_datetime('2010-02-24').date(), [
-        '4 years % fixed rate', '4 years % floating rate']]
-index_df.drop(labels=pd.to_datetime('2010-02-24').date(), axis=0, inplace=True)
-
 # %% Export.
-index_df.to_csv("results/nz_fixed_mortgage_rates.csv", index_label="date")
+index_df.to_csv("results/nz_cpi.csv", index_label="date")
